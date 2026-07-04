@@ -2,7 +2,7 @@ import logging
 import yaml
 from pathlib import Path
 from playwright.sync_api import Page
-from elements import OutingElements
+from elements.outing_elements import OutingElements
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 with open(ROOT_DIR / "config" / "config.yaml", 'r') as stream:
