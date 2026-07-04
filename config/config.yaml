@@ -1,0 +1,42 @@
+# ==============================================================================
+# VTOP Pilot Configuration Settings
+# ==============================================================================
+
+# VTOP Portal URLs
+urls:
+  login_page: "https://vtop.vitap.ac.in/vtop/login"
+  content_page: "https://vtop.vitap.ac.in/vtop/content"
+
+
+# Browser Automation Behavior, Not Used
+#browser:
+#  headless: false          # Set to true to hide the browser window during automation
+#  timeout_seconds: 10      # Maximum seconds to wait for a webpage element to load
+#  human_delay_min: 1.0     # Minimum delay (seconds) between actions to mimic a real student
+#  human_delay_max: 2.5     # Maximum delay (seconds) between actions to evade detection
+
+# Feedback Automation Settings
+feedback:
+  auto_submit: false       # If false, it fills the form but waits for you to review before submitting
+  default_rating: "Excellent" # Options: Excellent, Very Good, Good, Average
+
+# Outing Automation Settings
+outing:
+  default_date: "25"
+  default_leave_time: "09:00 AM"
+  default_return_time: "06:00 PM"
+  default_reason: "Local shopping and visiting relatives"
+  default_contact: "9000110101"
+  default_from_date: "25 JUN 26"
+  default_to_date: "30 JUN 26"
+
+#Semester
+sem:
+  default_semester: "Winter Semester 2025-26"
+
+# CNN Captcha Solver Configurations
+captcha:
+  enabled: false           # Set to true once your CNN model training is complete
+  model_path: "src/captcha/models/vtop_captcha_cnn.pth"
+  image_width: 150
+  image_height: 50
