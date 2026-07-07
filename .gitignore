@@ -2,3 +2,6 @@
 config/credentials.json
 config/email_app.json
 data
+
+__pycache__/
+*.py[cod]
