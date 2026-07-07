@@ -1,1 +1,15 @@
-{"cookies": [{"name": "JSESSIONID", "value": "1CBA2D5147BD9959A75543577345BA6A", "domain": "vtop.vitap.ac.in", "path": "/vtop", "expires": -1, "httpOnly": true, "secure": true, "sameSite": "Lax"}], "origins": []}
+{
+  "cookies": [
+    {
+      "name": "JSESSIONID",
+      "value": "F62D3AFEC9FF4D849513B8B36CAAB791",
+      "domain": "vtop.vitap.ac.in",
+      "path": "/vtop",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

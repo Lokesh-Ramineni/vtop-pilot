@@ -3,7 +3,7 @@ from elements.login_elements import LoginElements
 import yaml
 import json
 from pathlib import Path
-
+from otp_fetch.otp import OTPFetcher
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
 CONFIG_PATH = ROOT_DIR / "config" / "config.yaml"
@@ -43,10 +43,21 @@ def verify_login_session(playwright: Playwright) -> BrowserContext:
         page = context.new_page()
         login_element = LoginElements(page)
 
+        otp_fetcher = OTPFetcher()
+
+        # Remember the last OTP email BEFORE clicking login
+        otp_fetcher.remember_last_email()
+
         page.goto(config["urls"]["login_page"])
         print('\U0001F464   Submitting portal credentials...')
         login_element.login(credentials["username"], credentials["password"])
-
+        try:
+            expect(page.locator("h4[class='fw-bold']")).to_be_visible(timeout=3000)
+            otp = otp_fetcher.wait_for_new_otp(timeout=60)
+            page.locator("#securityOtpCode").fill(otp)
+            page.locator("#verifyOtpBtn").click()
+        except:
+            pass
         print('\U0001F4BE   Saving fresh session state to session.json...')
         context.storage_state(path=session_storage)
 
