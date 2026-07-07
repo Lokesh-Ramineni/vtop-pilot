@@ -1,2 +1,4 @@
 .venv
 config/credentials.json
+config/email_app.json
+data
