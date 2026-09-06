@@ -43,6 +43,27 @@ def main():
                 # Check current login state
                 browser, context = test_login.verify_login_session(playwright)
 
+                print('\U0001F3D6 1. WEEKEND OUTING')
+                print('\U0001F3EC 2. GENERAL OUTING')
+
+                num = int(input('\u2753 Choose an outing type (1-2): '))
+
+                while True:
+                    try:
+                        match num:
+                            case 1:
+                                print('\u27A1 Executing Weekend Outing Flow...')
+
+                                break
+                            case 2:
+                                print('\u27A1 Executing General Outing Flow...')
+
+                                break
+                            case _:
+                                print('\u26A0\uFE0F Choose correct number (1 or 2)')
+                    except ValueError:
+                        print('\u274C Invalid input! Please enter an integer.\n')
+
                 # If session is valid but ran headlessly, relaunch a visible workspace for user viewing
                 if browser.is_connected():
                     context.close()
@@ -54,7 +75,7 @@ def main():
 
                 page = context.new_page()
                 # Execute the specific outing actions
-                test_outing.run_outing_workflow(page)
+                test_outing.run_outing_workflow(page,num)
 
                 context.close()
                 browser.close()
