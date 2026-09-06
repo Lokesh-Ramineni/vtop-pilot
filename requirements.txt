@@ -1,4 +1,7 @@
-pytest
-pytest-playwright
-pyyaml
-imap-tools
+imap-tools>=1.15.0
+numpy>=2.5.2
+pillow>=12.3.0
+pytest>=9.1.1
+pytest-playwright>=0.9.0
+pyyaml>=6.0.3
+scipy>=1.18.1
