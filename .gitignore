@@ -1,7 +1,11 @@
 .venv
 config/credentials.json
 config/email_app.json
+config/session.json
 data
+
+src/vtop_pilot
+data.zip
 
 __pycache__/
 *.py[cod]
