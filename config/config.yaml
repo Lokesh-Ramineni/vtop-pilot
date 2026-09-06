@@ -22,21 +22,17 @@ feedback:
 
 # Outing Automation Settings
 outing:
-  default_date: "25"
+#  default_date: "25"
   default_leave_time: "09:00 AM"
   default_return_time: "06:00 PM"
   default_reason: "Local shopping and visiting relatives"
   default_contact: "9000110101"
-  default_from_date: "25 JUN 26"
-  default_to_date: "30 JUN 26"
+  default_from_date: "25-JUN-26"
+  default_to_date: "30-JUN-26"
+  default_place: "Enter Place"
+  default_purpose: "Family visit"
 
 #Semester
 sem:
   default_semester: "Winter Semester 2025-26"
 
-# CNN Captcha Solver Configurations
-captcha:
-  enabled: false           # Set to true once your CNN model training is complete
-  model_path: "src/captcha/models/vtop_captcha_cnn.pth"
-  image_width: 150
-  image_height: 50
