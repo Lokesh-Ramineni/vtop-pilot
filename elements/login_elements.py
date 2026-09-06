@@ -22,12 +22,16 @@ class LoginElements:
         self.login_btn=self.page.locator(".btn.btn-primary.fw-bold")
         self.username_input=self.page.locator("#username")
         self.password_input=self.page.locator("#password")
+        self.captcha_input=self.page.locator("#captchaStr")
         self.submit_btn=self.page.locator("#submitBtn")
 
-
-    def login(self,username,password):
+    def login_open(self):
         self.login_btn.click()
+
+    def login(self,username,password,captcha):
+        # self.login_btn.click()
         self.username_input.fill(username)
         self.password_input.fill(password)
-        self.page.wait_for_timeout(10000)
+        self.captcha_input.fill(captcha)
         self.submit_btn.click()
+        # self.page.wait_for_timeout(10000)
