@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+        "name": "JSESSIONID",
+        "value": "<YOUR_JSESSIONID_HERE>",
+        "domain": "vtop.vitap.ac.in",
+        "path": "/vtop",
+        "expires": -1,
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}
