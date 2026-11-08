@@ -1,98 +1,141 @@
-import imaplib
-import email
+import os
 import re
 import time
+import email
+import imaplib
 from pathlib import Path
-import json
+from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
-email_app = ROOT_DIR / "config" / "email_app.json"
+# ---------------------------------------------------------
+# Load .env
+# ---------------------------------------------------------
 
-with open(email_app, "r", encoding="utf-8") as json_stream:
-    details = json.load(json_stream)
+ROOT_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = ROOT_DIR / "config" / ".env"
 
-EMAIL = details["user_email"]
-APP_PASSWORD = details["app_password"]
+load_dotenv(ENV_PATH)
 
-FROM = details["from"]
-SUBJECT = details["subject"]
+EMAIL = os.getenv("EMAIL")
+APP_PASSWORD = os.getenv("APP_PASSWORD")
+
+if not EMAIL:
+    raise RuntimeError("EMAIL not found in .env")
+
+if not APP_PASSWORD:
+    raise RuntimeError("APP_PASSWORD not found in .env")
+
+# ---------------------------------------------------------
+
+IMAP_SERVER = "imap.gmail.com"
+
+FROM_EMAIL = "noreply.sdc@vitap.ac.in"
+EXPECTED_SUBJECT = "VTOP Login OTP Needed"
+
 
 class OTPFetcher:
+
     def __init__(self):
-        self.mail = imaplib.IMAP4_SSL(details["imap_server"])
-        self.mail.login(EMAIL, APP_PASSWORD)
-        self.mail.select("INBOX")
+        try:
+            self.mail = imaplib.IMAP4_SSL(IMAP_SERVER)
+            self.mail.login(EMAIL, APP_PASSWORD)
+            self.mail.select("INBOX")
 
-    def remember_last_email(self):
-        _, data = self.mail.search(
-            None,
-            f'(FROM "{FROM}" SUBJECT "{SUBJECT}")'
-        )
+        except imaplib.IMAP4.error as e:
+            raise RuntimeError(f"Failed to login to Gmail: {e}")
 
-        ids = data[0].split()
+    def __enter__(self):
+        return self
 
-        if ids:
-            self.last_seen = ids[-1]
-        else:
-            self.last_seen = None
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
-        print("Last OTP mail:", self.last_seen)
+    def fetch_latest_otp(self, timeout=90, poll_interval=2):
 
-    def wait_for_new_otp(self, timeout=60):
         start = time.time()
 
         while time.time() - start < timeout:
 
-            time.sleep(2)
+            self.mail.select("INBOX")
 
-            self.mail.noop()
 
-            _, data = self.mail.search(
-                None,
-                f'(FROM "{FROM}" SUBJECT "{SUBJECT}")'
-            )
+            date_str = (datetime.now() - timedelta(minutes=5)).strftime("%d-%b-%Y")
+            status, data =self.mail.search(None, f'(FROM "{FROM_EMAIL}" SINCE "{date_str}")')
+
+            if status != "OK":
+                time.sleep(poll_interval)
+                continue
 
             ids = data[0].split()
 
             if not ids:
+                time.sleep(poll_interval)
                 continue
 
             latest = ids[-1]
 
-            if latest != self.last_seen:
+            status, msg_data = self.mail.fetch(latest, "(RFC822)")
 
-                print("New OTP mail received.")
+            if status != "OK":
+                time.sleep(poll_interval)
+                continue
 
-                _, msg_data = self.mail.fetch(latest, "(RFC822)")
-                msg = email.message_from_bytes(msg_data[0][1])
+            msg = email.message_from_bytes(msg_data[0][1])
 
-                body = ""
+            subject = msg.get("Subject", "")
 
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        if part.get_content_type() in ("text/plain", "text/html"):
-                            payload = part.get_payload(decode=True)
+            if EXPECTED_SUBJECT not in subject:
+                time.sleep(poll_interval)
+                continue
 
-                            if payload:
-                                body += payload.decode(
-                                    part.get_content_charset() or "utf-8",
-                                    errors="ignore"
-                                )
-                else:
-                    payload = msg.get_payload(decode=True)
+            body = ""
+
+            if msg.is_multipart():
+
+                for part in msg.walk():
+
+                    if part.get_content_type() not in (
+                        "text/plain",
+                        "text/html"
+                    ):
+                        continue
+
+                    payload = part.get_payload(decode=True)
 
                     if payload:
-                        body = payload.decode(
-                            msg.get_content_charset() or "utf-8",
+                        body += payload.decode(
+                            part.get_content_charset() or "utf-8",
                             errors="ignore"
                         )
 
-                otp = re.search(r"\b(\d{6})\b", body)
+            else:
 
-                if otp:
-                    return otp.group(1)
+                payload = msg.get_payload(decode=True)
+
+                if payload:
+                    body = payload.decode(
+                        msg.get_content_charset() or "utf-8",
+                        errors="ignore"
+                    )
+
+            otp = re.search(r"\b(\d{6})\b", body)
+
+            if otp:
+                end=time.time()
+                return otp.group(1)
+
+            time.sleep(poll_interval)
 
         raise TimeoutError("OTP email did not arrive.")
 
     def close(self):
-        self.mail.logout()
+
+        try:
+            self.mail.close()
+        except Exception:
+            pass
+
+        try:
+            self.mail.logout()
+        except Exception:
+            pass
