@@ -1,30 +1,31 @@
 import sys
-from playwright.sync_api import sync_playwright
-# Import your core automation modules
+from src.automation import mentor_feedback
 from src.automation import test_login, test_outing
-                            #test_feedback)
+from src.automation import test_login, test_outing, feedback_details
 
+from playwright.sync_api import sync_playwright
 
 def main():
     print("===============================================")
     print("📱  VTOP PORTAL AUTOMATION DASHBOARD")
     print("===============================================")
-    print("⚙️  1. Check / Refresh Login Session Only")
+    print("⚙️   1. Check / Refresh Login Session Only")
     print("🧳  2. Apply for Outing (Auto-logins if needed)")
     print("📝  3. Auto-Fill Faculty Feedback Forms")
-    print(" ❌ 4. Exit")
+    print("📝  4. Auto-Fill Mentor Feedback Form")
+    print("❌  5. Exit")
     print("===============================================")
 
     while True:
         try:
-            choice = int(input("\n❓ Select an operation (1-4): "))
-            if choice in [1,2,3,4]:
+            choice = int(input("\n❓ Select an operation (1-5): "))
+            if choice in [1,2,3,4,5]:
                 break
-            print("⚠️  Please choose a valid number from 1 to 4.")
+            print("⚠️  Please choose a valid number from 1 to 5.")
         except ValueError:
             print("❌  Invalid entry. Please enter a valid number.")
 
-    if choice == 4:
+    if choice == 5:
         print("\n👋 Exiting dashboard. Goodbye!")
         return
 
@@ -81,27 +82,78 @@ def main():
                 browser.close()
                 print("\n🏁  Outing process finalized.")
 
-            # elif choice == 3:
-            #     # Check current login state
-            #     browser, context = test_login.verify_login_session(playwright)
-            #
-            #     # Feedback automation can run completely in headless mode to save time,
-            #     # but if you want to watch it click, keep it headed (headless=False)
-            #     if browser.is_connected():
-            #         context.close()
-            #         browser.close()
-            #
-            #         print("🌐  Session confirmed. Launching browser workspace to process Faculty Feedback...")
-            #         browser = playwright.chromium.launch(headless=False)  # Set to True if you want it silent
-            #         context = browser.new_context(storage_state=test_login.session_storage)
-            #
-            #     page = context.new_page()
-            #     # Execute the specific feedback actions
-            #     test_feedback.run_feedback_workflow(page)
-            #
-            #     context.close()
-            #     browser.close()
-            #     print("\n🏁  Faculty feedback submission process finalized.")
+            elif choice == 3:
+
+                print("\n🍪 Loading authenticated VTOP session...")
+
+                browser = playwright.chromium.launch(
+                    headless=False
+                )
+
+                try:
+                    context = browser.new_context(
+                        storage_state=str(test_login.session_storage)
+                    )
+
+                    page = context.new_page()
+
+                    print("\n🌐 Opening VTOP content page...")
+
+                    page.goto(
+                        test_login.config["urls"]["content_page"],
+                        wait_until="domcontentloaded"
+                    )
+
+                    # Verify saved session
+                    page.locator(
+                        "span.navbar-text"
+                    ).nth(0).wait_for(
+                        state="visible",
+                        timeout=30000
+                    )
+
+                    print("\n✅ Existing session loaded successfully.")
+
+                    print(
+                        "\n📌 Navigate to Academics → Feedback Form "
+                        "in the browser."
+                    )
+
+                    # Start feedback capture after form appears
+                    feedback_details.run_feedback_workflow(page)
+
+                except Exception as e:
+
+                    print(f"\n❌ Feedback automation failed: {e}")
+
+                finally:
+
+                    browser.close()
+
+            elif choice == 4:
+
+                browser = None
+                context = None
+
+                try:
+                    browser, context = test_login.verify_login_session(playwright)
+
+                    if context.pages:
+                        page = context.pages[0]
+                    else:
+                        page = context.new_page()
+
+                    mentor_feedback.run_mentor_feedback_workflow(page)
+
+                except Exception as error:
+                    print(f"\n❌ Mentor feedback automation failed: {error}")
+
+                finally:
+                    if context:
+                        context.close()
+
+                    if browser:
+                        browser.close()
 
         except Exception as e:
             # Handle situations where the session is lost or drops mid-execution
@@ -110,9 +162,6 @@ def main():
                 print("💡  Tip: Run Option 1 to establish a fresh login session and solve the Captcha.")
             else:
                 print(f"\n❌ An unexpected error occurred: {e}")
-                # Optional: uncomment the line below if you want to see raw tracebacks while debugging
-                # import traceback; traceback.print_exc()
-
 
 if __name__ == "__main__":
     main()
