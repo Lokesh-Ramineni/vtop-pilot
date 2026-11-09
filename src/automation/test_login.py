@@ -1,11 +1,13 @@
-from playwright.sync_api import Playwright, expect, BrowserContext
-from elements.login_elements import LoginElements
+import re
 import yaml
 import json
 import base64
 from pathlib import Path
 from otp_fetch.otp import OTPFetcher
 from solver.cap_solver import solve_captcha
+from playwright.sync_api import Playwright, expect, BrowserContext
+from elements.login_elements import LoginElements
+
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
 CONFIG_PATH = ROOT_DIR / "config" / "config.yaml"
@@ -18,6 +20,16 @@ with open(CONFIG_PATH, 'r') as stream:
 with open(CREDENTIALS_PATH, "r", encoding="utf-8") as json_stream:
     credentials = json.load(json_stream)
 
+def is_otp_prompt(page) -> bool:
+    """True when the 'Additional verification required' alert is shown."""
+    try:
+        alert = page.locator("span[role='alert']").filter(
+            has_text=re.compile(r"Additional verification required", re.I)
+        )
+        alert.first.wait_for(state="visible", timeout=5000)
+        return True
+    except Exception:
+        return False
 
 def verify_login_session(playwright: Playwright) -> BrowserContext:
 
@@ -45,12 +57,6 @@ def verify_login_session(playwright: Playwright) -> BrowserContext:
         page = context.new_page()
         login_element = LoginElements(page)
 
-        # otp_fetcher = OTPFetcher()
-
-        # Remember the last OTP email BEFORE clicking login
-        # otp_fetcher.remember_last_email()
-        
-    
         page.goto(config["urls"]["login_page"])
         login_element.login_open()
         
@@ -99,6 +105,26 @@ def verify_login_session(playwright: Playwright) -> BrowserContext:
 
                 page.wait_for_timeout(3000)
 
+                print(f"🔎 URL before OTP check: {page.url}")
+
+                if is_otp_prompt(page):
+                    print("📧 OTP required. Fetching from email...")
+                    try:
+                        with OTPFetcher() as otp_fetcher:
+                            otp = otp_fetcher.fetch_latest_otp()
+                        print(f"🔑 OTP received: {otp}")
+
+                        page.locator("#securityOtpCode").wait_for(state="visible", timeout=5000)
+                        page.locator("#securityOtpCode").fill(otp)
+                        page.locator("#verifyOtpBtn").click()
+                        page.wait_for_timeout(3000)
+                        print(f"🌐 URL after OTP: {page.url}")
+                    except Exception as e:
+                        print(f"❌ OTP step failed: {type(e).__name__}: {e}")
+                        raise
+                else:
+                    print("ℹ️ No OTP prompt detected.")
+                
                 print("⏳ Checking login result...")
 
                 if "/vtop/content" in page.url:
@@ -133,9 +159,6 @@ def verify_login_session(playwright: Playwright) -> BrowserContext:
 
         try:
             expect(page.locator("h4[class='fw-bold']")).to_be_visible(timeout=3000)
-            # otp = otp_fetcher.wait_for_new_otp(timeout=60)
-            # page.locator("#securityOtpCode").fill(otp)
-            # page.locator("#verifyOtpBtn").click()
         except:
             pass
         print('\U0001F4BE Saving fresh session state to session.json...')
