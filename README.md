@@ -1,97 +1,92 @@
 # VTOP PILOT (Automation Script) 🚀
 
-An automated Python script designed to handle routine tasks on the VIT VTOP portal, including seamless logins, automated feedback filling, and outing request submissions.
+An automated Python script for the VIT-AP VTOP portal. It handles logins (including captcha and email OTP), faculty feedback, mentor feedback, and hostel outing requests from a simple terminal dashboard.
 
 ## 🎯 Project Purpose
 
-- **⚡ Eliminating the Hectic Feedback Forms:** Skip the time-consuming process at the end of every semester. The script automates the repetitive radio buttons and mandatory fields for every faculty member, completing the entire evaluation grind in seconds.
+- **⚡ Eliminating the Hectic Feedback Forms:** Skip the time-consuming end-of-semester process. The script fills the repetitive radio buttons and mandatory text fields for every course (Theory, Lab and Lab Facility) and for the mentor feedback form.
 
-- **🏃 Hassle-Free Last-Minute Outings:** Removes frontend JavaScript validations to enable seamless, last-minute application submissions.
+- **🏃 Hassle-Free Last-Minute Outings:** Removes the client-side `readonly` restriction on the date fields so outing requests can be filled in and submitted without the date picker getting in the way.
+
+- **🔐 Hands-Free Login:** Solves the login captcha with a bundled offline model and fetches the email OTP from Gmail, so you rarely have to type anything.
 
 ### 1. The End-of-Semester Feedback Grind 📝
 
-- **The Problem:** Every semester, you are blocked from viewing your grades or timetable until you fill out massive feedback forms for every single professor. Clicking 20+ repetitive radio buttons ("Excellent"/"Good") across 6+ teachers takes forever.
+- **The Problem:** Every semester you are blocked from viewing your grades or timetable until you fill out feedback forms for every course and for your mentor. Clicking 20+ repetitive radio buttons per course takes forever.
 
-- **The Solution:** This script automatically navigates through the faculty evaluation pages, fills out the mandatory ratings instantly, and handles the submissions in seconds.
+- **The Solution:** The script reads your ratings from `config.yaml`, validates the form before touching it, fills every question, and (optionally) submits and moves on to the next course.
 
 ### 2. Last-Minute Outing Applications 🏃💨
 
-- **The Problem:** VTOP strictly locks you out and blocks you from applying if you try to submit an outing request less than 24 hours before your departure time, giving you zero flexibility for sudden weekend plans.
+- **The Problem:** VTOP's date fields are read-only and driven by a date picker, which makes sudden weekend plans awkward to submit.
 
-- **The Solution:** **🏃 Hassle-Free Last-Minute Outings:** Removes frontend JavaScript validations to enable seamless, last-minute application submissions. The script bypasses client-side time-lock constraints, allowing you to submit your weekend leave requests instantly whenever you need them.
+- **The Solution:** The script removes the `readonly` attribute from the date inputs, fills your configured values and clicks **SUBMIT**.
 
 ## 🌟 Features
 
-- **Automated Login:** Handles secure authentication using localized session management.
-- **Feedback Automation:** Automatically processes and submits Faculty feedback forms via `feedback_elements.py`.
-- **Outing Management:** Automates the hostel outing applications via `outing_elements.py`.
-- **Persistent Sessions:** Saves active browser states to `session.json` to bypass logging in every single run.
+- **Automated Login:** Reuses a saved session when valid, otherwise logs in automatically with captcha solving and email OTP.
+- **Offline Captcha Solver:** A small CNN implemented in pure NumPy/SciPy (no PyTorch or TensorFlow needed) reads the 6-character captcha. Failed attempts retry automatically.
+- **Email OTP Handling:** Detects VTOP's "Additional verification required" prompt, reads the OTP from Gmail over IMAP, and submits it.
+- **Faculty Feedback Automation:** Fills Theory, Lab and Lab Facility feedback for every course in the selected semester, skipping courses that are already submitted.
+- **Mentor Feedback Automation:** Fills the mentee feedback form, including the attendance and "reason for missing meetings" questions.
+- **Outing Management:** Automates Weekend Outing and General Outing requests.
+- **Persistent Sessions:** Saves browser state to `config/session.json` so you don't log in on every run.
 
 ## 📁 Project Structure
 
 ```text
 vtop-pilot/
 ├── config/
-│   ├── config.yaml
-│   ├── credentials.json
-│   ├── email_app.json
+│   ├── config.yaml                # URLs, feedback / mentor / outing settings
+│   ├── .env                       # Gmail address + app password (OTP) — you create this
+│   ├── credentials.json           # VTOP username/password — you create this
+│   ├── session.json               # Saved browser session (auto-generated)
 │   ├── example_credentials.json
 │   ├── example_email_app.json
-│   ├── example_session.json
-│   └── session.json
+│   └── example_session.json
 │
-├── data/
+├── data/                          # Generated output (git-ignored)
+│   └── feedback_dropdowns.json    # Captured semesters / feedback types / courses
 │
-├── elements/
-│   ├── __pycache__/
-│   ├── __init__.py
-│   ├── feedback_elements.py
+├── elements/                      # Page objects (selectors + small actions)
 │   ├── login_elements.py
+│   ├── feedback_elements.py
+│   ├── mentor_feedback_elements.py
 │   └── outing_elements.py
 │
 ├── otp_fetch/
-│   ├── __pycache__/
-│   └── otp.py
+│   └── otp.py                     # Gmail IMAP OTP fetcher
 │
 ├── scraper/
-│   ├── __pycache__/
-│   └── test_scrape.py
+│   └── test_scrape.py             # Collects captcha images (for model training)
 │
 ├── solver/
-│   ├── __pycache__/
-│   └── cap_solver.py
+│   └── cap_solver.py              # Offline CNN captcha solver
 │
 ├── src/
-│   ├── __pycache__/
-│   ├── automation/
-│   │   ├── __pycache__/
-│   │   ├── .pytest_cache/
-│   │   ├── __init__.py
-│   │   ├── test_login.py
-│   │   └── test_outing.py
-│   ├── vtop_pilot/
-│   └── __init__.py
+│   └── automation/
+│       ├── test_login.py          # Session check + login + captcha + OTP
+│       ├── test_outing.py         # Outing workflow
+│       ├── feedback_details.py    # Faculty feedback workflow
+│       └── mentor_feedback.py     # Mentor feedback workflow
 │
 ├── Weights/
-│   ├── captcha_weights.npz
-│   └── labels.json
+│   ├── captcha_weights.npz        # Trained captcha model weights
+│   └── labels.json                # Captcha character set
 │
 ├── .gitignore
 ├── .python-version
-├── data.zip
 ├── pyproject.toml
 ├── pytest.ini
 ├── README.md
 ├── requirements.txt
-├── run.py
+├── run.py                         # Interactive dashboard (entry point)
 └── uv.lock
 ```
 
-> **Note:** `__pycache__/` and `.pytest_cache/` are generated directories and normally should not be committed. They are shown above only to reflect the current project layout.
-
 ## 🛠️ Installation & Setup
 
-Follow these steps to set up the project locally using **uv**.
+Requires **Python 3.12+** (the project uses `match` statements). The steps below use **uv**.
 
 ### 1. Clone the Repository
 
@@ -102,27 +97,13 @@ cd vtop-pilot
 
 ### 2. Install uv
 
-If you do not already have `uv` installed, install it using the official installer for your operating system.
-
-Verify the installation:
+Install `uv` using the official installer for your operating system, then verify:
 
 ```bash
 uv --version
 ```
 
-### 3. Initialize the uv Project
-
-If you are setting up the project from scratch, initialize uv in the project directory:
-
-```bash
-uv init
-```
-
-If you cloned this repository and `pyproject.toml` already exists, you can skip `uv init` and continue with the virtual environment setup.
-
-### 4. Create and Activate the `.venv`
-
-Create the virtual environment using uv:
+### 3. Create and Activate the `.venv`
 
 ```bash
 uv venv
@@ -140,58 +121,111 @@ uv venv
 source .venv/bin/activate
 ```
 
-After activation, verify that the virtual environment is active:
+### 4. Install Dependencies
+
+If `pyproject.toml` and `uv.lock` already exist (they do in this repository), sync the environment:
 
 ```bash
-python --version
+uv sync
 ```
 
-### 5. Add Dependencies
-
-Add all dependencies from `requirements.txt` to the uv-managed project:
+Or install from `requirements.txt`:
 
 ```bash
 uv add -r requirements.txt
 ```
 
-This updates `pyproject.toml` and `uv.lock`.
-
-For future dependencies, use:
+The OTP module also needs `python-dotenv`. If you installed from `requirements.txt` and see an import error for `dotenv`, add it:
 
 ```bash
-uv add package-name
+uv add python-dotenv
+```
+
+### 5. Install the Playwright Browser
+
+Playwright needs its Chromium build downloaded once:
+
+```bash
+playwright install chromium
 ```
 
 ## ⚙️ Configuration
 
-Before running the automation scripts, you must configure your local credentials.
+Three things need to be set up before the first run.
 
-1. Navigate to the `config/` directory.
+### 1. VTOP credentials — `config/credentials.json`
 
-2. Duplicate `example_credentials.json` and rename the copy to `credentials.json`.
+Duplicate `config/example_credentials.json`, rename the copy to `credentials.json`, and fill in your details:
 
-3. Open `credentials.json` and fill in your actual VTOP login details:
+```json
+{
+  "username": "YOUR_REGISTRATION_NUMBER",
+  "password": "YOUR_VTOP_PASSWORD"
+}
+```
 
-   ```json
-   {
-     "username": "YOUR_REGISTRATION_NUMBER",
-     "password": "YOUR_VTOP_PASSWORD"
-   }
-   ```
+### 2. Email OTP — `config/.env`
 
-   > **Note:** `credentials.json` is ignored by Git to keep your account credentials safe.
+VTOP sends a one-time password to your registered email on some logins. The OTP fetcher reads it from Gmail over IMAP using credentials stored in `config/.env`:
 
-4. If required by your setup, configure the email application details using `example_email_app.json` and create your local `email_app.json`.
+```env
+EMAIL=your.email@gmail.com
+APP_PASSWORD=your_gmail_app_password
+```
 
-5. Keep `session.json` local. It contains saved browser session information and should not be committed to Git.
+- `APP_PASSWORD` must be a **Gmail App Password**, not your normal password. Create one under your Google Account → Security → 2-Step Verification → App passwords.
+- IMAP must be enabled for the Gmail account.
+- The fetcher looks for emails from `noreply.sdc@vitap.ac.in` with the subject `VTOP Login OTP Needed`.
+
+> **Important:** The code reads `config/.env`. The `example_email_app.json` / `email_app.json` files are **not** used by the current code.
+
+### 3. Your registration number check
+
+After logging in, `src/automation/test_login.py` confirms success by checking that the navbar reads `24MIC7146 (STUDENT)`. **Change this string to your own registration number**, otherwise the check will fail for your account. It appears in two places in the file.
+
+### 4. Behaviour settings — `config/config.yaml`
+
+```yaml
+urls:
+  login_page: "https://vtop.vitap.ac.in/vtop/login"
+  content_page: "https://vtop.vitap.ac.in/vtop/content"
+
+feedback:
+  auto_submit: false          # false = fill, then you review and submit manually
+  default_rating: "Excellent" # Needs Improvement | Satisfactory | Good | Very Good | Excellent
+  MESSAGE: "Nothing"          # Text for free-text questions
+  THEORY: "NONE"              # Override rating for Theory ("NONE" = use default_rating)
+  LAB: "NONE"                 # Override rating for Lab
+  LAB_FACILITY: "NONE"        # Override rating for Lab Facility
+
+mentor_feedback:
+  rating: "Excellent"
+  MESSAGE: "Nothing"          # Letters, numbers, spaces and ? @ # $ % ^ & * ( ) only
+
+outing:
+  default_leave_time: "09:00 AM"
+  default_return_time: "06:00 PM"
+  default_reason: "Local shopping and visiting relatives"
+  default_contact: "9000110101"
+  default_from_date: "25-JUN-26"   # General outing: leave date
+  default_to_date: "30-JUN-26"     # General outing: return date
+  default_place: "Enter Place"
+  default_purpose: "Family visit"
+  # default_date: "25"             # Weekend outing date (see note below)
+
+sem:
+  default_semester: "Winter Semester 2025-26"
+```
+
+Settings are validated before any form is touched, so a typo such as `"Very good"` fails immediately with a clear message listing the valid values.
+
+> **Weekend Outing:** the weekend flow reads `outing.default_date`. It is commented out in the default config, so uncomment and set it before using option 2 → Weekend Outing.
+
+Keep `credentials.json`, `config/.env` and `session.json` local. They are listed in `.gitignore`; never commit them.
 
 ## 🚀 How to Use
 
-Always ensure your virtual environment is active before running commands.
-
-### Launch the Automation Dashboard
-
-Open your terminal and run the main entry file:
+Make sure the virtual environment is active, then run:
 
 ```bash
 python run.py
@@ -199,23 +233,63 @@ python run.py
 
 ### Dashboard Menu Options
 
-When the interactive terminal dashboard opens, you can choose from the following operations:
+```text
+⚙️   1. Check / Refresh Login Session Only
+🧳  2. Apply for Outing (Auto-logins if needed)
+📝  3. Auto-Fill Faculty Feedback Forms
+📝  4. Auto-Fill Mentor Feedback Form
+❌  5. Exit
+```
 
-- **Option 1 (`Check / Refresh Login Session Only`):** Verifies if your saved session in `session.json` is still valid. If it has expired, it automatically opens a visible browser window so you can quickly log in and solve the captcha.
+- **Option 1 – Check / Refresh Login Session:** Silently validates `config/session.json` in a headless browser. If the session has expired, a visible browser opens and logs in automatically (captcha + OTP), then saves a fresh session.
 
-- **Option 2 (`Apply for Outing`):** Validates your current login session and instantly launches a visible workspace to automate and submit your hostel outing application with ease before the weekend deadline hits.
+- **Option 2 – Apply for Outing:** Validates the session (logging in if needed), then asks for the outing type:
+  - **1. Weekend Outing**
+  - **2. General Outing**
 
-- **Option 3 (`Auto-Fill Faculty Feedback Forms`):** Connects to the portal and triggers an automated clicking loop to fill out and submit the time-consuming end-of-semester mandatory faculty evaluation forms in seconds.
+  A visible browser opens, opens the Hostels menu, fills the form using your `config.yaml` values and clicks **SUBMIT**.
+
+- **Option 3 – Auto-Fill Faculty Feedback Forms:** Opens a visible browser with your saved session. Navigate to **Academics → Feedback Form** yourself; the script detects the form and then:
+  1. Captures all semesters, feedback types and courses to `data/feedback_dropdowns.json`.
+  2. Processes **THEORY**, **LAB** and **LAB_FACILITY** for the currently selected semester, one course at a time.
+  3. Skips courses that show "You have already given Feedback".
+  4. Validates every question before filling anything.
+
+  With `auto_submit: false` (default) you review each form in the browser, submit it, and type `SUBMITTED` in the terminal to continue. With `auto_submit: true` it waits 10 seconds for review, then submits automatically.
+
+  > This option loads `session.json` directly. If your session has expired, run **Option 1** first.
+
+- **Option 4 – Auto-Fill Mentor Feedback Form:** Validates the session (logging in if needed), then waits for you to open the **Mentee Feedback Form**. It will:
+  1. Ask you to choose the semester.
+  2. Ask how many mentoring meetings you attended.
+  3. If you attended fewer than two, ask for a reason (and a custom reason if you pick "Other"); otherwise fill all rating and text questions from `config.yaml`.
+  4. Leave the form for you to review and submit, then wait for you to type `SUBMITTED`.
+
+- **Option 5 – Exit.**
+
+## 🔐 How the Login Flow Works
+
+1. A headless browser loads `session.json` and checks that the VTOP navbar shows your registration number.
+2. If that fails, a visible browser opens the login page.
+3. The captcha image is read from the page and solved offline by `solver/cap_solver.py`.
+4. Credentials and the captcha are submitted.
+5. If VTOP shows **"Additional verification required. OTP sent to your registered email."**, the script fetches the OTP from Gmail, fills `#securityOtpCode` and clicks `#verifyOtpBtn`.
+6. If the captcha was wrong, the page reloads and the loop retries.
+7. On success, the session is saved to `config/session.json`.
+
+## 🧪 Captcha Model & Data Collection
+
+- `Weights/captcha_weights.npz` and `Weights/labels.json` hold the trained model and its character set (`2-9` and `A-Z` without `I`, `O`, `0`, `1`).
+- `scraper/test_scrape.py` is a pytest script that downloads captcha images into `data/`. It was used to collect training data and is not needed for normal use.
+- `pytest.ini` enables verbose output and live INFO logging for the test modules.
 
 ## 🔄 Updating Dependencies
-
-If you add a new dependency to the project, use:
 
 ```bash
 uv add package-name
 ```
 
-If you update `requirements.txt`, sync those dependencies into the uv-managed project with:
+If you update `requirements.txt`, sync it with:
 
 ```bash
 uv add -r requirements.txt
@@ -223,10 +297,21 @@ uv add -r requirements.txt
 
 This updates `pyproject.toml` and `uv.lock`.
 
+## 🩺 Troubleshooting
+
+| Symptom | Likely cause / fix |
+| --- | --- |
+| `EMAIL not found in .env` / `APP_PASSWORD not found in .env` | Create `config/.env` with `EMAIL` and `APP_PASSWORD`. |
+| `Failed to login to Gmail` | Use a Gmail **App Password** and make sure IMAP is enabled. |
+| Login keeps failing after success | Update the `24MIC7146 (STUDENT)` check in `test_login.py` to your own registration number. |
+| `OTP email did not arrive` | Check the email is arriving at the Gmail account in `.env`, and that it is from `noreply.sdc@vitap.ac.in`. |
+| Feedback option errors immediately | Session expired. Run option 1, then retry. |
+| `Invalid spelling/value for feedback...` | Fix the rating text in `config.yaml` (exact spelling, e.g. `Very Good`). |
+
 ## ⚠️ Disclaimer
 
 This project is intended for educational and personal workflow-automation purposes only. It is provided "as is" and should be used responsibly.
 
- The authors are not responsible for any account restrictions, disciplinary action, data loss, or other consequences resulting from the use or misuse of this project.
+The authors are not responsible for any account restrictions, disciplinary action, data loss, or other consequences resulting from the use or misuse of this project.
 
 Do not use this tool to access, modify, or submit information belonging to another person.
