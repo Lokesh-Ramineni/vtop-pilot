@@ -4,6 +4,8 @@ config/email_app.json
 config/session.json
 data
 
+.env
+
 src/vtop_pilot
 data.zip
 
