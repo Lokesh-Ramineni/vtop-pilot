@@ -1,7 +1,7 @@
-from playwright.sync_api import Page
 import yaml
 import json
 from pathlib import Path
+from playwright.sync_api import Page
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,8 +13,6 @@ with open(CONFIG_PATH, "r", encoding="utf-8") as stream:
 
 with open(CREDENTIALS_PATH, "r", encoding="utf-8") as json_stream:
     credentials = json.load(json_stream)
-
-
 
 class LoginElements:
     def __init__(self,page: Page):
@@ -29,9 +27,7 @@ class LoginElements:
         self.login_btn.click()
 
     def login(self,username,password,captcha):
-        # self.login_btn.click()
         self.username_input.fill(username)
         self.password_input.fill(password)
         self.captcha_input.fill(captcha)
         self.submit_btn.click()
-        # self.page.wait_for_timeout(10000)
