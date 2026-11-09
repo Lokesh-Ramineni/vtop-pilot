@@ -7,18 +7,18 @@ urls:
   login_page: "https://vtop.vitap.ac.in/vtop/login"
   content_page: "https://vtop.vitap.ac.in/vtop/content"
 
-
-# Browser Automation Behavior, Not Used
-#browser:
-#  headless: false          # Set to true to hide the browser window during automation
-#  timeout_seconds: 10      # Maximum seconds to wait for a webpage element to load
-#  human_delay_min: 1.0     # Minimum delay (seconds) between actions to mimic a real student
-#  human_delay_max: 2.5     # Maximum delay (seconds) between actions to evade detection
-
 # Feedback Automation Settings
 feedback:
   auto_submit: false       # If false, it fills the form but waits for you to review before submitting
-  default_rating: "Excellent" # Options: Excellent, Very Good, Good, Average
+  default_rating: "Excellent" # Options: Excellent, Very Good, Good
+  MESSAGE: "Nothing"
+  THEORY: "NONE"
+  LAB: "NONE"
+  LAB_FACILITY: "NONE"
+
+mentor_feedback:
+  rating: "Excellent"
+  MESSAGE: "Nothing"
 
 # Outing Automation Settings
 outing:
